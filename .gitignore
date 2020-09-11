@@ -1,2 +1,2 @@
 .idea/
-!/infracode/.terraform/
+.terraform/
