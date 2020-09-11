@@ -1,2 +1,6 @@
 flask
 gunicorn
+tensorflow
+tensorflow-datasets
+scikit-learn
+matplotlib
