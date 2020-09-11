@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: forecast-alpha-deployment
+  labels:
+    app: forecast-alpha-multiplexer
+spec:
+  selector:
+    matchLabels:
+      app: forecast-alpha-multiplexer
+  template:
+    metadata:
+      labels:
+        app: forecast-alpha-multiplexer
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: forecast-alpha-multiplexer
+          image: gcr.io/modelservice-ase/multiplexer:latest
+          args: [ "-p" , "forecast-alpha","-v","latest","-d","today" ]
+          volumeMounts:
+            - mountPath: /mnt/fileserver
+              name: mypvc
+          readinessProbe:
+            httpGet:
+              port: 80
+              path: /ready
+            initialDelaySeconds: 15
+            periodSeconds: 5
+          ports:
+            - containerPort: 80
+      volumes:
+        - name: mypvc
+          persistentVolumeClaim:
+            claimName: fileserver-claim
+            readOnly: false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: forecast-alpha-multiplexer-service
+  labels:
+    app: forecast-alpha-multiplexer
+spec:
+  selector:
+    app: forecast-alpha-multiplexer
+  ports:
+    - port: 80
