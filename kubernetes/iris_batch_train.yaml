@@ -1,0 +1,23 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: iris
+spec:
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: iris-alpha-batch-train
+              image: gcr.io/modelservice-ase/iris:alpha
+              args: ["-b","/mnt/analytics/batch/"]
+              volumeMounts:
+                - mountPath: /mnt/analytics/batch/
+                  name: nfsvc
+          volumes:
+            - name: nfsvc
+              persistentVolumeClaim:
+                claimName:  fileserver-claim
+                readOnly: false
+  schedule: "*/3 * * * *"
