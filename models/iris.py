@@ -32,31 +32,8 @@ from sklearn.linear_model import LogisticRegression
 
 parser = argparse.ArgumentParser("Iris project")
 
-parser.add_argument("--version", "-v", type=str, required=True,
-                    help="Model version")
-parser.add_argument("--date", "-d", type=str, required=True,
-                    help="Training date as %Y%m%d")
-
-
-class MultiplexerFn:
-
-    def __init__(self, project_name):
-        self.name = project_name
-        self.candidacy = []
-
-    def set_candidacy_fn(self, candidacy_fn, model_code):
-        self.candidacy.append((candidacy_fn, model_code))
-
-    def __call__(self, instances, *args, **kwargs):
-        multiplexer_targets = defaultdict(list)
-
-        for feature, label in instances:
-            for candidacy_fn, model_code in self.candidacy:
-                if candidacy_fn(feature):
-                    multiplexer_targets[model_code].append((feature, label))
-                    break
-
-        return multiplexer_targets
+parser.add_argument("--base", "-b", type=str, required=False,
+                    help="Base path to write model files", default='')
 
 
 class ModelCode:
@@ -65,53 +42,39 @@ class ModelCode:
     def __init__(self, code_name, estimator):
         self.name = code_name
         self.estimator = estimator
-        self.candidacy_fn = None
 
     @staticmethod
     def process_feature_instance(feature_instance):
         return feature_instance
 
-    def train(self, instances):
-        features, labels = [], []
-        for feature, label in instances:
-            features.append(self.process_feature_instance(feature))
-            labels.append(label)
-
+    def train(self, features, labels):
         self.estimator.fit(features, labels)
         return deepcopy(self)
 
-    def predict(self, feature_instance: np.ndarray):
-        return self.estimator.predict(
-            np.array(feature_instance).reshape(1, -1))
-
-    def get_candidacy_fn(self):
-        if not self.candidacy_fn:
-            raise NotImplementedError()
-        return self.candidacy_fn
+    def predict(self, features: np.ndarray):
+        return self.estimator.predict(features)
 
 
 class Model:
 
-    def __init__(self, project_name, version):
+    def __init__(self, project_name, version, preprocessor_fn):
         self.name = project_name
         self.version = version
-        self.preprocessor_fn = MultiplexerFn(self.name)
+        self.preprocessor_fn = preprocessor_fn
         self.model_codes: [ModelCode] = []
 
     def add_model_code(self, model_code: ModelCode):
         self.model_codes.append(model_code)
-        self.preprocessor_fn.set_candidacy_fn(model_code.get_candidacy_fn(),
-                                              model_code.name)
 
     def train_model_codes(self, features, labels):
-        mc_packs = self.preprocessor_fn(zip(features, labels))
+        mc_packs = self.preprocessor_fn(features, labels)
 
         for model_code in self.model_codes:
-            model_code.train(mc_packs[model_code.name])
+            model_code.train(*mc_packs[model_code.name])
 
         return
 
-    def training_session(self, features, labels, base_path=''):
+    def training_session(self, features, labels, base_path):
         training_stamp = np.floor(time.time()).astype(int)
         self.train_model_codes(features, labels)
 
@@ -146,38 +109,41 @@ def load_data():
 
 
 if __name__ == '__main__':
-
-    iris = Model("iris", "alpha")
-
+    args = parser.parse_args()
     positive_mc = ModelCode("positive", LogisticRegression())
-
-
-    def positive_candidacy(feature):
-        import numpy as np  # Making imports since these will be serialised
-        if np.ceil(np.sum(feature)) % 2 == 0:
-            return True
-        return False
-
-
-    positive_mc.candidacy_fn = positive_candidacy
-
     negative_mc = ModelCode("negative", LogisticRegression())
 
 
-    def negative_candidacy(feature):
-        import numpy as np  # Making imports since these will be serialised
-        if np.ceil(np.sum(feature)) % 2 != 0:
-            return True
-        return False
+    def split_model_codes(features, labels):
+        model_codes = ["positive", "negative"]
+        feature_split = defaultdict(list)
+        for feature, label in zip(features, labels):
+            if np.ceil(np.sum(feature)) % 2 == 0:
+                feature_split[model_codes[0]].append(
+                    (feature, label))
+            else:
+                feature_split[model_codes[1]].append(
+                    (feature, label))
+
+        # Currently this will be feature, label tuples. The input functions
+        # expect all features in one list and all labels in one list.
+        for model_code, instances in feature_split.items():
+            features, labels = [], []
+            for feature, label in instances:
+                features.append(feature)
+                labels.append(label)
+            feature_split[model_code] = (features, labels)
+
+        return feature_split
 
 
-    negative_mc.candidacy_fn = negative_candidacy
+    iris = Model("iris", "alpha", split_model_codes)
 
     iris.add_model_code(positive_mc)
     iris.add_model_code(negative_mc)
 
     features, labels = load_data()
 
-    iris.training_session(features, labels)
+    iris.training_session(features, labels, args.base)
 
     print("completed")
