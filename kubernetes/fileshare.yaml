@@ -8,8 +8,8 @@ spec:
   accessModes:
     - ReadWriteMany
   nfs:
-    path: /testshare
-    server: 10.197.184.122
+    path: /analytics
+    server: 10.38.161.250
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
