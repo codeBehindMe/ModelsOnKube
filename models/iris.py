@@ -180,26 +180,5 @@ if __name__ == '__main__':
 
     iris.training_session(features, labels)
 
-    lr = LogisticRegression()
-    lr.fit(features, labels)
+    print("completed")
 
-    with open("logreg.mdl", "wb") as f:
-        pickle.dump(lr, f)
-
-    with open("logreg.mdl", "rb") as f:
-        loaded_lr = pickle.load(f)
-
-    print(loaded_lr.predict(np.array(features[0]).reshape(1, -1)))
-
-    svc = SVC()
-    svc.fit(features, labels)
-
-    with open("svc.mdl", "wb") as f:
-        pickle.dump(svc, f)
-
-    with open("iris/alpha/1599878257/negative/model.mdl", "rb") as f:
-        model_code: ModelCode = pickle.load(f)
-        for f in features:
-            print(
-                f"{model_code.predict(f)} : {lr.predict(np.array(f).reshape(1, -1))}")
-    print("Success")
