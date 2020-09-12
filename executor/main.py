@@ -20,6 +20,7 @@
 # If not, see <https://www.gnu.org/licenses/>.
 
 import argparse
+import glob
 import os
 import pickle
 import time
@@ -52,6 +53,13 @@ def simulate_prediction_delay(duration_secs=1):
     :return:
     """
     time.sleep(duration_secs)
+
+
+def get_latest_training_date(base_path, project_name, model_version):
+    path = os.path.join(base_path, project_name, model_version, "*")
+    mc_dirs = sorted(filter(lambda x: x.isdigit(), glob.glob(path)),
+                     reverse=True)
+    return mc_dirs[0]  # latest model code
 
 
 def load_estimator(base_path, project_name, model_version, training_date,
