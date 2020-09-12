@@ -37,7 +37,7 @@ parser.add_argument("--project", "-p", type=str, required=True,
                     help="Project name")
 parser.add_argument("--version", "-v", type=str, required=True,
                     help="Model version")
-parser.add_argument("--date", "-d", type=str, required=True,
+parser.add_argument("--date", "-d", type=str, required=False, default='',
                     help="Training date")
 parser.add_argument("--code", "-c", type=str, required=True, help="Model Code")
 parser.add_argument("--base", "-b", type=str, required=False, default='',
@@ -99,11 +99,12 @@ def predict():
 if __name__ == '__main__':
     args = parser.parse_args()
 
+    base_path = args.base
     project_name = args.project
     model_version = args.version
     training_date = args.date
-    model_code = args.code
-    base_path = args.base
+    model_code = args.code if args.code else get_latest_training_date(
+        base_path, project_name, model_version)
 
     # Load the estimator
     estimator = load_estimator(base_path, project_name, model_version,
