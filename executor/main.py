@@ -20,9 +20,15 @@
 # If not, see <https://www.gnu.org/licenses/>.
 
 import argparse
+import os
+import pickle
 import time
 
+import numpy as np
 from flask import Flask
+from flask import jsonify
+from flask import request
+from sklearn.linear_model import LogisticRegression
 
 parser = argparse.ArgumentParser("Prediction Executor")
 
@@ -33,6 +39,8 @@ parser.add_argument("--version", "-v", type=str, required=True,
 parser.add_argument("--date", "-d", type=str, required=True,
                     help="Training date")
 parser.add_argument("--code", "-c", type=str, required=True, help="Model Code")
+parser.add_argument("--base", "-b", type=str, required=False, default='',
+                    help="Base path to where the model files are located.")
 
 app = Flask(__name__)
 
@@ -46,6 +54,17 @@ def simulate_prediction_delay(duration_secs=1):
     time.sleep(duration_secs)
 
 
+def load_estimator(base_path, project_name, model_version, training_date,
+                   model_code):
+    file_name = os.path.join(base_path, project_name, model_version,
+                             training_date, model_code, "model.mdl")
+
+    with open(file_name, "rb") as f:
+        estimator: LogisticRegression = pickle.load(f)
+
+    return estimator
+
+
 @app.route('/ready')
 def ready():
     """
@@ -55,17 +74,18 @@ def ready():
     return "ready", 200
 
 
-@app.route("/model")
+@app.route("/model", methods=["POST"])
 def predict():
     """
     Prediction endpoint
     :return:
     """
-    simulate_prediction_delay()
-
+    d = request.get_json()
+    features = np.array(d["features"])
+    predictions = estimator.predict(features)
     resp = f"Prediction from : /{project_name}/{model_version}/{training_date}/{model_code}"
 
-    return resp, 200
+    return jsonify(predictions), 200
 
 
 if __name__ == '__main__':
@@ -75,7 +95,11 @@ if __name__ == '__main__':
     model_version = args.version
     training_date = args.date
     model_code = args.code
+    base_path = args.base
 
+    # Load the estimator
+    estimator = load_estimator(base_path, project_name, model_version,
+                               training_date, model_code)
     print(
         f"Creating executor for: {project_name}/{model_version}/{training_date}/{model_code}"
     )
