@@ -29,7 +29,6 @@ from copy import deepcopy
 import numpy as np
 import tensorflow_datasets as tfds
 from sklearn.linear_model import LogisticRegression
-from sklearn.svm import SVC
 
 parser = argparse.ArgumentParser("Iris project")
 
@@ -112,12 +111,13 @@ class Model:
 
         return
 
-    def training_session(self, features, labels):
+    def training_session(self, features, labels, base_path=''):
         training_stamp = np.floor(time.time()).astype(int)
         self.train_model_codes(features, labels)
 
         # Save the candidacy function in /projectName/modelVersion/
-        file_name = os.path.join(self.name, self.version, "preprocessor.fn")
+        file_name = os.path.join(base_path, self.name, self.version,
+                                 "preprocessor.fn")
         os.makedirs(os.path.dirname(file_name), exist_ok=True)
         with open(file_name, "wb") as f:
             pickle.dump(self.preprocessor_fn, f)
@@ -125,12 +125,12 @@ class Model:
         # Save the session in a folder which is
         # /projectName/modelVersion/trainingDate/modelCode
         for model_code in self.model_codes:
-            file_name = os.path.join(self.name, self.version,
+            file_name = os.path.join(base_path, self.name, self.version,
                                      str(training_stamp),
                                      model_code.name, "model.mdl")
             os.makedirs(os.path.dirname(file_name), exist_ok=True)
             with open(file_name, "wb") as f:
-                pickle.dump(model_code, f)
+                pickle.dump(model_code.estimator, f)
 
 
 def load_data():
@@ -181,4 +181,3 @@ if __name__ == '__main__':
     iris.training_session(features, labels)
 
     print("completed")
-
