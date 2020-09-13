@@ -24,8 +24,6 @@
 
 import argparse
 import concurrent.futures as concurrency
-import os
-import pickle
 import time
 from collections import defaultdict
 
@@ -49,27 +47,6 @@ parser.add_argument("--base", "-b", type=str, required=False, default='',
 app = Flask(__name__)
 
 
-def preprocess_function(project_name, model_version, training_date):
-    """
-    Splits up into model codes.
-
-    In the real function, it'll actually split the data according to the
-    relevant model code. This function would the would simply allocate the
-    correct route to the model code.
-    :param project_name:
-    :param model_version:
-    :param training_date:
-    :return:
-    """
-
-    available_model_codes = ["retail", "fashion"]
-    # Simulate the preprocess function working
-    time.sleep(3)
-
-    for model_code in available_model_codes:
-        yield f"http://{project_name}-executor-{model_code}-service/model"
-
-
 def prepare_for_preprocessing(features):
     """
     Prepares for preprocessing.
@@ -85,15 +62,6 @@ def prepare_for_preprocessing(features):
     return features, labels
 
 
-def load_model_preprocessor_function(base_path, project_name, model_version):
-    file_name = os.path.join(base_path, project_name, model_version,
-                             "preprocessor.fn")
-    with open(file_name, "rb") as f:
-        fn = pickle.load(f)
-
-    return fn
-
-
 def simulate_load_model_config(duration_secs=10):
     """
     Simulates the time taken for loading the model config.
@@ -103,7 +71,7 @@ def simulate_load_model_config(duration_secs=10):
 
 
 def model_code_to_uri(project_name, model_version, model_code):
-    return f"{project_name}-{model_version}-{model_code}/model"
+    return f"http://{project_name}-{model_version}-{model_code}/model"
 
 
 def http_call_remote(uri, json):
