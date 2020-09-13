@@ -104,9 +104,9 @@ def predict():
     d = request.get_json()
     features = np.array(d["features"])
     predictions = estimator.predict(features)
-    resp = f"Prediction from : /{project_name}/{model_version}/{training_date}/{model_code}"
-
-    return jsonify(predictions), 200
+    resp = create_response_package(predictions, project_name, model_version,
+                                   training_date, model_code)
+    return jsonify(resp), 200
 
 
 if __name__ == '__main__':
@@ -115,10 +115,9 @@ if __name__ == '__main__':
     base_path = args.base
     project_name = args.project
     model_version = args.version
-    training_date = args.date
-    model_code = args.code if args.code else get_latest_training_date(
+    model_code = args.code
+    training_date = args.date if args.date else get_latest_training_date(
         base_path, project_name, model_version)
-
     # Load the estimator
     estimator = load_estimator(base_path, project_name, model_version,
                                training_date, model_code)
