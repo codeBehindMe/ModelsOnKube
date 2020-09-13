@@ -57,8 +57,9 @@ def simulate_prediction_delay(duration_secs=1):
 
 def get_latest_training_date(base_path, project_name, model_version):
     path = os.path.join(base_path, project_name, model_version, "*")
-    mc_dirs = sorted(filter(lambda x: x.isdigit(), glob.glob(path)),
-                     reverse=True)
+    dirs = map(lambda x: os.path.basename(os.path.normpath(x)),
+               glob.glob(path))
+    mc_dirs = sorted(filter(lambda x: x.isdigit(), dirs), reverse=True)
     return mc_dirs[0]  # latest model code
 
 
@@ -78,11 +79,12 @@ def create_response_package(predictions, project_name, model_version,
     res = {}
     res[model_code] = {}
 
-    res[model_code]["predictions"] = predictions
+    res[model_code]["predictions"] = predictions.tolist()
     res[model_code]["meta"] = {"project_name": project_name,
-                   "model_version": model_version,
-                   "training_date": training_date, "model_code": model_code,
-                   "response_time_code": time.time()}
+                               "model_version": model_version,
+                               "training_date": training_date,
+                               "model_code": model_code,
+                               "response_time_code": time.time()}
 
     return res
 
