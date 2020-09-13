@@ -114,6 +114,8 @@ if __name__ == '__main__':
     negative_mc = ModelCode("negative", LogisticRegression())
 
 
+    # This is the model's preprocessor function.
+
     def split_model_codes(features, labels):
         model_codes = ["positive", "negative"]
         feature_split = defaultdict(list)
