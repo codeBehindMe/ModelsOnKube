@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: iris-alpha-positive-deployment
+  labels:
+    modelcode: iris-alpha-positive
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      modelcode: iris-alpha-positive
+  template:
+    metadata:
+      labels:
+        modelcode: iris-alpha-positive
+        templateclass: executor
+    spec:
+      containers:
+        - name: iris-alpha-positive
+          image: gcr.io/modelservice-ase/executor:latest
+          args: [ "-b", "mnt/analytics/batch","-p","iris","-v","alpha","-c","positive" ]
+          readinessProbe:
+            httpGet:
+              port: 80
+              path: /ready
+            initialDelaySeconds: 20
+            periodSeconds: 5
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - mountPath: /mnt/analytics/batch/
+              name: nfsvc
+      volumes:
+        - name: nfsvc
+          persistentVolumeClaim:
+            claimName: fileserver-claim
+            readOnly: false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: iris-alpha-positive-service
+  labels:
+    templateclass: executor
+spec:
+  selector:
+    modelcode: iris-alpha-positive
+  ports:
+    - port: 80
