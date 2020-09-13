@@ -1,2 +1,5 @@
 .idea/
 .terraform/
+*.mdl
+__pycache__/
+*.fn
