@@ -20,4 +20,4 @@ spec:
               persistentVolumeClaim:
                 claimName:  fileserver-claim
                 readOnly: false
-  schedule: "*/3 * * * *"
+  schedule: "*/30 * * * *"
