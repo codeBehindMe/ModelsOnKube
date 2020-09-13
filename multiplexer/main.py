@@ -102,7 +102,9 @@ def predict():
     Prediction endpoint
     :return:
     """
+    print("received")
     package = request.get_json()
+
     features = package["features"]
     features, labels = prepare_for_preprocessing(features)
 
@@ -169,5 +171,4 @@ if __name__ == '__main__':
         f"Creating multiplexer for: {project_name}/{model_version}/{training_date}"
     )
 
-    simulate_load_model_config()
     app.run("0.0.0.0", port=80)
