@@ -76,9 +76,10 @@ def load_estimator(base_path, project_name, model_version, training_date,
 def create_response_package(predictions, project_name, model_version,
                             training_date, model_code):
     res = {}
+    res[model_code] = {}
 
-    res["predictions"] = predictions
-    res["meta"] = {"project_name": project_name,
+    res[model_code]["predictions"] = predictions
+    res[model_code]["meta"] = {"project_name": project_name,
                    "model_version": model_version,
                    "training_date": training_date, "model_code": model_code,
                    "response_time_code": time.time()}
