@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: iris-alpha-deployment
+  labels:
+    model: iris-alpha
+spec:
+  selector:
+    matchLabels:
+      model: iris-alpha
+  template:
+    metadata:
+      labels:
+        model: iris-alpha
+        templateclass: multiplexer
+    spec:
+      containers:
+        - name: iris-alpha
+          image: gcr.io/modelservice-ase/multiplexer:latest
+          imagePullPolicy: Always
+          args: [ "-p","iris","-v","alpha","-b","/mnt/analytics/batch" ]
+          volumeMounts:
+            - mountPath: /mnt/analytics/batch/
+              name: nfsvc
+          readinessProbe:
+            httpGet:
+              port: 80
+              path: /ready
+            initialDelaySeconds: 15
+            periodSeconds: 5
+          ports:
+            - containerPort: 80
+      volumes:
+        - name: nfsvc
+          persistentVolumeClaim:
+            claimName: fileserver-claim
+            readOnly: false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: iris-alpha-service
+  labels:
+    model: iris-alpha
+spec:
+  selector:
+    model: iris-alpha
+  ports:
+    - port: 80
