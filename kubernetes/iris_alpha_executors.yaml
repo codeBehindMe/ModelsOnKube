@@ -47,3 +47,53 @@ spec:
     modelcode: iris-alpha-positive
   ports:
     - port: 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: iris-alpha-negative-deployment
+  labels:
+    modelcode: iris-alpha-negative
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      modelcode: iris-alpha-negative
+  template:
+    metadata:
+      labels:
+        modelcode: iris-alpha-negative
+        templateclass: executor
+    spec:
+      containers:
+        - name: iris-alpha-negative
+          image: gcr.io/modelservice-ase/executor:latest
+          args: [ "-b", "mnt/analytics/batch","-p","iris","-v","alpha","-c","negative" ]
+          readinessProbe:
+            httpGet:
+              port: 80
+              path: /ready
+            initialDelaySeconds: 20
+            periodSeconds: 5
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - mountPath: /mnt/analytics/batch/
+              name: nfsvc
+      volumes:
+        - name: nfsvc
+          persistentVolumeClaim:
+            claimName: fileserver-claim
+            readOnly: false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: iris-alpha-negative-service
+  labels:
+    templateclass: executor
+spec:
+  selector:
+    modelcode: iris-alpha-negative
+  ports:
+    - port: 80
