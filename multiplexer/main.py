@@ -38,8 +38,6 @@ parser.add_argument("--project", "-p", type=str, required=True,
                     help="Project name")
 parser.add_argument("--version", "-v", type=str, required=True,
                     help="Model version")
-parser.add_argument("--date", "-d", type=str, required=True,
-                    help="Training date")
 
 parser.add_argument("--base", "-b", type=str, required=False, default='',
                     help="Base path to where the model files are located.")
@@ -71,7 +69,7 @@ def simulate_load_model_config(duration_secs=10):
 
 
 def model_code_to_uri(project_name, model_version, model_code):
-    return f"http://{project_name}-{model_version}-{model_code}/model"
+    return f"http://{project_name}-{model_version}-{model_code}-service/model"
 
 
 def http_call_remote(uri, json):
@@ -119,8 +117,8 @@ def predict():
             futures.append(e.submit(http_call_remote, uri, package))
 
         responses = [f.result() for f in concurrency.as_completed(futures)]
-
-        return str(responses), 200
+        r_body = [r.text for r in responses]
+        return str(r_body), 200
 
 
 if __name__ == '__main__':
@@ -129,7 +127,6 @@ if __name__ == '__main__':
     base_path = args.base
     project_name = args.project
     model_version = args.version
-    training_date = args.date
 
 
     # This would be normally dynamically loaded from the preprocessor function
@@ -168,7 +165,7 @@ if __name__ == '__main__':
     preprocessor_fn = split_model_codes
 
     print(
-        f"Creating multiplexer for: {project_name}/{model_version}/{training_date}"
+        f"Creating multiplexer for: {project_name}/{model_version}"
     )
 
     app.run("0.0.0.0", port=80)
